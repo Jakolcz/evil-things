@@ -1,0 +1,2 @@
+powershell/common.ps1
+powershell/daemon.ps1
