@@ -16,13 +16,10 @@ pub fn get_config() -> BaseConfig {
     });
     // now check for a config file
 
-    match load_config_file(&home_dir) {
-        Ok(c) => c,
-        Err(e) => {
-            log::error!("Error loading config file: {}", e);
-            create_default_config(&home_dir)
-        }
-    }
+    load_config_file(&home_dir).unwrap_or_else(|e| {
+        log::error!("Error loading config file: {}", e);
+        create_default_config(&home_dir)
+    })
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
