@@ -7,11 +7,11 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
-tokio = "1.33.0"
+tokio = { version = "1.33.0", features = ["full"] }
 reqwest = "0.11.22"
 log = "0.4.20"
 simple_logger = "4.2.0"
 #config = "0.13.3"
 toml = "0.8.2"
-serde = { version = "1.0.188", features = ["derive"] }
+serde = { version = "1.0.189", features = ["derive"] }
 #log4rs = "1.2.0"

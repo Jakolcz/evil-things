@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env::temp_dir;
 use std::error::Error;
 use std::fs;
@@ -7,8 +8,16 @@ use crate::wallpaper::WallpaperConfig;
 
 const APP_NAME: &str = "Evilyn";
 const CONFIG_FILE_NAME: &str = "config.toml";
+pub const MODULE_NAMES: [&str; 1] = ["wallpaper"];
 
-pub fn get_config() -> BaseConfig {
+pub const SECOND: u32 = 1;
+pub const MINUTE: u32 = 60 * SECOND;
+pub const HOUR: u32 = 60 * MINUTE;
+pub const MAN_DAY: u32 = 8 * HOUR;
+pub const DAY: u32 = 24 * HOUR;
+pub const WEEK: u32 = 7 * DAY;
+
+pub fn get_base_config() -> BaseConfig {
     log::debug!("Loading config...");
 
     let home_dir = home_dir().unwrap_or_else(|e| {
@@ -22,18 +31,28 @@ pub fn get_config() -> BaseConfig {
     })
 }
 
+pub trait ModuleConfig {
+    fn new(base_config: &BaseConfig) -> Self;
+    fn refresh_base_config(&mut self, base_config: &BaseConfig);
+    fn get_module_name(&self) -> &str;
+    fn get_enabled(&self) -> bool;
+    fn set_enabled(&mut self, enabled: bool);
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+// #[serde(deny_unknown_fields)]
 pub struct BaseConfig {
-    // local_storage_base: String,
-    wallpaper_config: Option<WallpaperConfig>,
     home_dir: PathBuf,
+    main_loop_sleep: u64,
+    module_statuses: HashMap<String, bool>,
 }
 
 impl BaseConfig {
     pub fn new(home_dir: &PathBuf) -> Self {
         Self {
             home_dir: home_dir.clone(),
+            main_loop_sleep: SECOND as u64,
+            module_statuses: HashMap::from([(String::from("wallpaper"), true)]),
             ..Default::default()
         }
     }
@@ -46,11 +65,20 @@ impl BaseConfig {
         &self.home_dir
     }
 
-    pub fn get_wallpaper_config(&self) -> &WallpaperConfig {
-        &self.wallpaper_config.as_ref().unwrap()
+    pub fn get_main_loop_sleep(&self) -> u64 {
+        self.main_loop_sleep
     }
-    pub fn set_wallpaper_config(&mut self, wallpaper_config: WallpaperConfig) {
-        self.wallpaper_config = Some(wallpaper_config);
+
+    pub fn get_module_statuses(&self) -> &HashMap<String, bool> {
+        &self.module_statuses
+    }
+
+    pub fn is_module_enabled(&self) -> bool {
+        self.module_statuses.get("wallpaper").unwrap_or(&false).clone()
+    }
+
+    pub fn set_module_enabled(&mut self, module_name: &str, enabled: bool) {
+        self.module_statuses.insert(String::from(module_name), enabled);
         self.persist();
     }
 
@@ -84,6 +112,7 @@ fn load_config_file(home_dir: &PathBuf) -> Result<BaseConfig, Box<dyn Error>> {
     if config_file_path.exists() {
         log::debug!("Config file exists, loading...");
         let config_file = fs::read_to_string(config_file_path)?;
+        // TODO maybe unwrap_or_else, remove the broken file and replace it with a new one?
         config = toml::from_str(&config_file)?;
         config.set_home_dir(home_dir);
     } else {
@@ -107,7 +136,8 @@ fn save_config_file(config: &BaseConfig) -> Result<(), Box<dyn Error>> {
 
 fn create_default_config(home_dir: &PathBuf) -> BaseConfig {
     let mut config = BaseConfig::new(home_dir);
-    config.set_wallpaper_config(WallpaperConfig::new(&config));
+    let wallpaper_config = WallpaperConfig::new(&config);
+    // config.set_wallpaper_config(WallpaperConfig::new(&config));
 
     config
 }
