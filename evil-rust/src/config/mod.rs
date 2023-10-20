@@ -35,7 +35,6 @@ pub trait ModuleConfig where Self: Debug + Serialize + DeserializeOwned + Sized 
     fn refresh_base_config(&mut self, base_config: &BaseConfig);
     fn get_module_name(&self) -> &str;
     fn get_module_home(&self) -> &PathBuf;
-    fn construct_module_home(base_home_path: &PathBuf) -> PathBuf;
     fn get_enabled(&self) -> bool;
     fn set_enabled(&mut self, enabled: bool);
 
@@ -43,6 +42,11 @@ pub trait ModuleConfig where Self: Debug + Serialize + DeserializeOwned + Sized 
         save_module_config(self).unwrap_or_else(|e| {
             log::error!("Error saving config file: {}", e);
         });
+    }
+    fn construct_module_home(base_home_path: &PathBuf) -> PathBuf;
+    fn config_exists(home: &PathBuf, name: &str) -> bool {
+        let config_file_path = home.join(format!("{}.toml", name));
+        config_file_path.exists()
     }
 }
 
@@ -113,9 +117,6 @@ pub fn load_config<T: DeserializeOwned>(folder: &PathBuf, module_name: &str) -> 
         // TODO maybe unwrap_or_else, remove the broken file and replace it with a new one?
         config = toml::from_str(&config_file)?;
     } else {
-        // log::debug!("Config file does not exist, creating...");
-        // config = None;
-        // save_module_config(&config)?;
         return Err(Box::from(format!("Config file does not exist: {:?}", config_file_path)));
     };
 
@@ -158,6 +159,7 @@ fn save_base_config(config: &BaseConfig) -> Result<(), Box<dyn Error>> {
 
 fn do_save<T: Serialize>(file: &T, folder: &PathBuf, file_name: &str) -> Result<(), Box<dyn Error>> {
     log::debug!("Doing the actual save...");
+    fs::create_dir_all(folder)?; // ensure the folder exists
     let config_file_path = folder.join(format!("{}.toml", file_name));
     let config_file = toml::to_string(file)?;
     fs::write(config_file_path, config_file)?;
