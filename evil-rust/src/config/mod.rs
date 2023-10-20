@@ -9,7 +9,7 @@ use serde::de::DeserializeOwned;
 
 const APP_NAME: &str = "Evilyn";
 const CONFIG_FILE_NAME: &str = "config";
-pub const MODULE_NAMES: [&str; 1] = ["wallpaper"];
+pub const MODULE_NAMES: [&str; 1] = [crate::wallpaper::MODULE_NAME];
 
 pub const SECOND: u32 = 1;
 pub const MINUTE: u32 = 60 * SECOND;
@@ -62,7 +62,7 @@ impl BaseConfig {
         Self {
             home_dir: home_dir.clone(),
             main_loop_sleep: SECOND as u64,
-            module_statuses: HashMap::from([(String::from("wallpaper"), true)]),
+            module_statuses: HashMap::from([(String::from(crate::wallpaper::MODULE_NAME), true)]),
             ..Default::default()
         }
     }
@@ -83,8 +83,8 @@ impl BaseConfig {
         &self.module_statuses
     }
 
-    pub fn is_module_enabled(&self) -> bool {
-        self.module_statuses.get("wallpaper").unwrap_or(&false).clone()
+    pub fn is_module_enabled(&self, module_name: &str) -> bool {
+        self.module_statuses.get(module_name).unwrap_or(&false).clone()
     }
 
     pub fn set_module_enabled(&mut self, module_name: &str, enabled: bool) {
