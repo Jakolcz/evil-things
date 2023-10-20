@@ -4,10 +4,10 @@ use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
-use crate::wallpaper::WallpaperConfig;
+use crate::wallpaper::WallpaperModule;
 
 const APP_NAME: &str = "Evilyn";
-const CONFIG_FILE_NAME: &str = "config.toml";
+const CONFIG_FILE_NAME: &str = "config";
 pub const MODULE_NAMES: [&str; 1] = ["wallpaper"];
 
 pub const SECOND: u32 = 1;
@@ -35,6 +35,7 @@ pub trait ModuleConfig {
     fn new(base_config: &BaseConfig) -> Self;
     fn refresh_base_config(&mut self, base_config: &BaseConfig);
     fn get_module_name(&self) -> &str;
+    fn get_module_home(&self) -> &PathBuf;
     fn get_enabled(&self) -> bool;
     fn set_enabled(&mut self, enabled: bool);
 }
@@ -83,7 +84,7 @@ impl BaseConfig {
     }
 
     fn persist(&self) {
-        save_config_file(self).unwrap_or_else(|e| {
+        save_base_config(self).unwrap_or_else(|e| {
             log::error!("Error saving config file: {}", e);
         });
     }
@@ -118,7 +119,7 @@ fn load_config_file(home_dir: &PathBuf) -> Result<BaseConfig, Box<dyn Error>> {
     } else {
         log::debug!("Config file does not exist, creating...");
         config = create_default_config(home_dir);
-        save_config_file(&config)?;
+        save_base_config(&config)?;
     };
 
     log::debug!("Final config: {:?}", config);
@@ -126,17 +127,28 @@ fn load_config_file(home_dir: &PathBuf) -> Result<BaseConfig, Box<dyn Error>> {
     Ok(config)
 }
 
-fn save_config_file(config: &BaseConfig) -> Result<(), Box<dyn Error>> {
-    log::debug!("Saving config...");
-    let config_file_path = config.get_home_dir().join(CONFIG_FILE_NAME);
-    let config_file = toml::to_string(&config)?;
+pub fn save_module_config<T: ModuleConfig + Serialize>(config: &T) -> Result<(), Box<dyn Error>> {
+    log::debug!("Saving module '{}' config...", config.get_module_name());
+    do_save(config, config.get_module_home(), config.get_module_name())
+}
+
+fn save_base_config(config: &BaseConfig) -> Result<(), Box<dyn Error>> {
+    log::debug!("Saving base config...");
+    do_save(config, config.get_home_dir(), CONFIG_FILE_NAME)
+}
+
+
+fn do_save<T: Serialize>(file: &T, folder: &PathBuf, file_name: &str) -> Result<(), Box<dyn Error>> {
+    log::debug!("Doing the actual save...");
+    let config_file_path = folder.join(format!("{}.toml", file_name));
+    let config_file = toml::to_string(file)?;
     fs::write(config_file_path, config_file)?;
     Ok(())
 }
 
 fn create_default_config(home_dir: &PathBuf) -> BaseConfig {
     let mut config = BaseConfig::new(home_dir);
-    let wallpaper_config = WallpaperConfig::new(&config);
+    // let wallpaper_config = WallpaperModule::new(&config);
     // config.set_wallpaper_config(WallpaperConfig::new(&config));
 
     config

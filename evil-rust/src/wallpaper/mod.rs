@@ -8,14 +8,14 @@ pub const MODULE_NAME: &str = "wallpaper";
 const DEFAULT_SOURCE_HTTP: &str = "https://source.unsplash.com/random/1920x1080";
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct WallpaperConfig {
+pub struct WallpaperModule {
     enabled: bool,
     wallpaper_dir: PathBuf,
     source_http: String,
     frequency_range: Range<u32>,
 }
 
-impl ModuleConfig for WallpaperConfig {
+impl ModuleConfig for WallpaperModule {
     fn new(base_config: &BaseConfig) -> Self {
         Self {
             enabled: true,
@@ -36,6 +36,10 @@ impl ModuleConfig for WallpaperConfig {
         MODULE_NAME
     }
 
+    fn get_module_home(&self) -> &PathBuf {
+        &self.wallpaper_dir
+    }
+
     fn get_enabled(&self) -> bool {
         self.enabled
     }
@@ -45,7 +49,7 @@ impl ModuleConfig for WallpaperConfig {
     }
 }
 
-impl WallpaperConfig {
+impl WallpaperModule {
     pub fn get_next_frequency(&self) -> u32 {
         rand::thread_rng().gen_range(self.frequency_range.clone())
     }
