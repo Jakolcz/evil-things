@@ -6,7 +6,6 @@ use std::fs;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
-use crate::wallpaper::WallpaperModule;
 
 const APP_NAME: &str = "Evilyn";
 const CONFIG_FILE_NAME: &str = "config";
@@ -109,7 +108,7 @@ pub fn load_config<T: DeserializeOwned>(folder: &PathBuf, module_name: &str) -> 
     log::debug!("Loading module '{}' config...", module_name);
     let config_file_path = folder.join(format!("{}.toml", module_name));
     log::debug!("Config file path: {:?}", config_file_path);
-    let mut config: T;
+    let config: T;
 
     if config_file_path.exists() {
         log::debug!("Config file exists, loading...");
@@ -140,10 +139,10 @@ fn home_dir() -> Result<PathBuf, Box<dyn Error>> {
 /// # Returns
 ///    Config - The loaded config.
 fn load_base_config(home_dir: &PathBuf) -> BaseConfig {
-    load_config(home_dir, CONFIG_FILE_NAME).unwrap_or_else(|e| {
+    load_config(home_dir, CONFIG_FILE_NAME).unwrap_or_else(|_| {
         // silently ignore errors and replace it with None
         log::debug!("Config file does not exist, creating...");
-        let config = create_default_config(home_dir);
+        let config = BaseConfig::new(home_dir);
         save_base_config(&config).unwrap_or_else(|e| {
             log::error!("Error saving config file: {}", e);
         });
@@ -165,12 +164,3 @@ fn do_save<T: Serialize>(file: &T, folder: &PathBuf, file_name: &str) -> Result<
     fs::write(config_file_path, config_file)?;
     Ok(())
 }
-
-fn create_default_config(home_dir: &PathBuf) -> BaseConfig {
-    let mut config = BaseConfig::new(home_dir);
-    // let wallpaper_config = WallpaperModule::new(&config);
-    // config.set_wallpaper_config(WallpaperConfig::new(&config));
-
-    config
-}
-

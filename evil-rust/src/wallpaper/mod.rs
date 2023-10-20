@@ -2,7 +2,9 @@ use std::ops::Range;
 use std::path::PathBuf;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use crate::config::{BaseConfig, load_config, MAN_DAY, MINUTE, ModuleConfig, save_module_config};
+use crate::config::{BaseConfig, load_config, MINUTE, ModuleConfig, save_module_config};
+#[cfg(not(debug_assertions))]
+use crate::config::MAN_DAY;
 
 pub const MODULE_NAME: &str = "wallpaper";
 const DEFAULT_SOURCE_HTTP: &str = "https://source.unsplash.com/random/1920x1080";
@@ -39,6 +41,7 @@ impl ModuleConfig for WallpaperModule {
 
     fn refresh_base_config(&mut self, base_config: &BaseConfig) {
         self.wallpaper_dir = WallpaperModule::construct_module_home(base_config.get_home_dir());
+        self.persist();
     }
 
     fn get_module_name(&self) -> &str {
@@ -55,6 +58,7 @@ impl ModuleConfig for WallpaperModule {
 
     fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
+        self.persist();
     }
 
     fn construct_module_home(base_home_path: &PathBuf) -> PathBuf {
