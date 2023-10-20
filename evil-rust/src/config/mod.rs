@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 use std::env::temp_dir;
 use std::error::Error;
+use std::fmt::Debug;
 use std::fs;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use crate::wallpaper::WallpaperModule;
 
 const APP_NAME: &str = "Evilyn";
@@ -25,19 +27,23 @@ pub fn get_base_config() -> BaseConfig {
     });
     // now check for a config file
 
-    load_config_file(&home_dir).unwrap_or_else(|e| {
-        log::error!("Error loading config file: {}", e);
-        create_default_config(&home_dir)
-    })
+    load_base_config(&home_dir)
 }
 
-pub trait ModuleConfig {
+pub trait ModuleConfig where Self: Debug + Serialize + DeserializeOwned + Sized {
     fn new(base_config: &BaseConfig) -> Self;
     fn refresh_base_config(&mut self, base_config: &BaseConfig);
     fn get_module_name(&self) -> &str;
     fn get_module_home(&self) -> &PathBuf;
+    fn construct_module_home(base_home_path: &PathBuf) -> PathBuf;
     fn get_enabled(&self) -> bool;
     fn set_enabled(&mut self, enabled: bool);
+
+    fn persist(&self) {
+        save_module_config(self).unwrap_or_else(|e| {
+            log::error!("Error saving config file: {}", e);
+        });
+    }
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -90,6 +96,33 @@ impl BaseConfig {
     }
 }
 
+pub fn save_module_config<T: ModuleConfig>(config: &T) -> Result<(), Box<dyn Error>> {
+    log::debug!("Saving module '{}' config...", config.get_module_name());
+    do_save(config, config.get_module_home(), config.get_module_name())
+}
+
+pub fn load_config<T: DeserializeOwned>(folder: &PathBuf, module_name: &str) -> Result<T, Box<dyn Error>> {
+    log::debug!("Loading module '{}' config...", module_name);
+    let config_file_path = folder.join(format!("{}.toml", module_name));
+    log::debug!("Config file path: {:?}", config_file_path);
+    let mut config: T;
+
+    if config_file_path.exists() {
+        log::debug!("Config file exists, loading...");
+        let config_file = fs::read_to_string(config_file_path)?;
+        // TODO maybe unwrap_or_else, remove the broken file and replace it with a new one?
+        config = toml::from_str(&config_file)?;
+    } else {
+        // log::debug!("Config file does not exist, creating...");
+        // config = None;
+        // save_module_config(&config)?;
+        return Err(Box::from(format!("Config file does not exist: {:?}", config_file_path)));
+    };
+
+    Ok(config)
+}
+
+
 /// Returns the path to the home directory for the application, ensures the directory exists.
 ///
 /// # Returns
@@ -105,31 +138,16 @@ fn home_dir() -> Result<PathBuf, Box<dyn Error>> {
 /// Loads the config file from the home directory. In case the file does not exist, it will be created and the default values will be used.
 /// # Returns
 ///    Config - The loaded config.
-fn load_config_file(home_dir: &PathBuf) -> Result<BaseConfig, Box<dyn Error>> {
-    let config_file_path = home_dir.clone().join(CONFIG_FILE_NAME);
-    log::debug!("Config file path: {:?}", config_file_path);
-    let mut config: BaseConfig;
-
-    if config_file_path.exists() {
-        log::debug!("Config file exists, loading...");
-        let config_file = fs::read_to_string(config_file_path)?;
-        // TODO maybe unwrap_or_else, remove the broken file and replace it with a new one?
-        config = toml::from_str(&config_file)?;
-        config.set_home_dir(home_dir);
-    } else {
+fn load_base_config(home_dir: &PathBuf) -> BaseConfig {
+    load_config(home_dir, CONFIG_FILE_NAME).unwrap_or_else(|e| {
+        // silently ignore errors and replace it with None
         log::debug!("Config file does not exist, creating...");
-        config = create_default_config(home_dir);
-        save_base_config(&config)?;
-    };
-
-    log::debug!("Final config: {:?}", config);
-
-    Ok(config)
-}
-
-pub fn save_module_config<T: ModuleConfig + Serialize>(config: &T) -> Result<(), Box<dyn Error>> {
-    log::debug!("Saving module '{}' config...", config.get_module_name());
-    do_save(config, config.get_module_home(), config.get_module_name())
+        let config = create_default_config(home_dir);
+        save_base_config(&config).unwrap_or_else(|e| {
+            log::error!("Error saving config file: {}", e);
+        });
+        config
+    })
 }
 
 fn save_base_config(config: &BaseConfig) -> Result<(), Box<dyn Error>> {

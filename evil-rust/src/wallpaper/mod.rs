@@ -17,9 +17,10 @@ pub struct WallpaperModule {
 
 impl ModuleConfig for WallpaperModule {
     fn new(base_config: &BaseConfig) -> Self {
+
         Self {
             enabled: true,
-            wallpaper_dir: base_config.get_home_dir().join(MODULE_NAME),
+            wallpaper_dir: WallpaperModule::construct_module_home(base_config.get_home_dir()),
             source_http: String::from(DEFAULT_SOURCE_HTTP),
             #[cfg(debug_assertions)]
             frequency_range: (MINUTE..2 * MINUTE),
@@ -29,7 +30,7 @@ impl ModuleConfig for WallpaperModule {
     }
 
     fn refresh_base_config(&mut self, base_config: &BaseConfig) {
-        self.wallpaper_dir = base_config.get_home_dir().join(MODULE_NAME);
+        self.wallpaper_dir = WallpaperModule::construct_module_home(base_config.get_home_dir());
     }
 
     fn get_module_name(&self) -> &str {
@@ -38,6 +39,10 @@ impl ModuleConfig for WallpaperModule {
 
     fn get_module_home(&self) -> &PathBuf {
         &self.wallpaper_dir
+    }
+
+    fn construct_module_home(base_home_path: &PathBuf) -> PathBuf {
+        base_home_path.join(MODULE_NAME)
     }
 
     fn get_enabled(&self) -> bool {
