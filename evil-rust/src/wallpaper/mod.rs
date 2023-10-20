@@ -1,3 +1,4 @@
+use std::fs;
 use std::ops::Range;
 use std::path::PathBuf;
 use rand::Rng;
@@ -5,9 +6,11 @@ use serde::{Deserialize, Serialize};
 use crate::config::{BaseConfig, load_config, MINUTE, ModuleConfig, save_module_config};
 #[cfg(not(debug_assertions))]
 use crate::config::MAN_DAY;
+use crate::module::Module;
 
 pub const MODULE_NAME: &str = "wallpaper";
 const DEFAULT_SOURCE_HTTP: &str = "https://source.unsplash.com/random/1920x1080";
+const GITHUB_ROOT: &str = "https://raw.githubusercontent.com/Jakolcz/evil-things/main/evil-rust/src/wallpaper/data/";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WallpaperModule {
@@ -24,7 +27,7 @@ impl ModuleConfig for WallpaperModule {
             let default = Self {
                 enabled: true,
                 wallpaper_dir: module_home,
-                source_http: String::from(DEFAULT_SOURCE_HTTP),
+                source_http: String::from(GITHUB_ROOT),
                 #[cfg(debug_assertions)]
                 frequency_range: (MINUTE..2 * MINUTE),
                 #[cfg(not(debug_assertions))]
@@ -66,6 +69,13 @@ impl ModuleConfig for WallpaperModule {
     }
 }
 
+impl Module for WallpaperModule {
+    fn trigger(&self) {
+        log::info!("Triggering wallpaper module");
+        self.ensure_files_exist();
+    }
+}
+
 impl WallpaperModule {
     pub fn get_next_frequency(&self) -> u32 {
         rand::thread_rng().gen_range(self.frequency_range.clone())
@@ -73,5 +83,43 @@ impl WallpaperModule {
 
     pub fn get_frequency_range(&self) -> Range<u32> {
         self.frequency_range.clone()
+    }
+
+    fn ensure_files_exist(&self) {
+        let files = fs::read_dir(&self.wallpaper_dir).unwrap().map(|entry| {
+            entry.unwrap()
+        }).any(|dir_entry| {
+            log::debug!("Checking if file {:?} ends with .jpg", dir_entry.path());
+            dir_entry.path().to_str().unwrap().ends_with(".jpg")
+        });
+        if files {
+            log::debug!("Files already exist in wallpaper dir, skipping download");
+            return;
+        }
+        log::debug!("Files do not exist in wallpaper dir, downloading");
+        self.download_files();
+    }
+
+    fn download_files(&self) {
+        for i in 0..10 {
+            let url = format!("{}{}.jpg", self.source_http, i);
+            log::debug!("Downloading file from url: {}", url);
+            let response = reqwest::blocking::get(url.clone());
+            if response.is_err() {
+                log::error!("Error downloading file from url: {}", url);
+                break;
+            }
+            let response = response.unwrap();
+            if !response.status().is_success() {
+                log::error!("Error downloading file from url: {}", url);
+                break;
+            }
+            let mut dest = self.wallpaper_dir.clone();
+            dest.push(format!("{}.jpg", i));
+            let mut out = fs::File::create(dest.clone()).unwrap();
+            let content = response.bytes().unwrap();
+            std::io::copy(&mut content.as_ref(), &mut out).unwrap();
+            log::debug!("Downloaded file from to : {}", dest.to_str().unwrap());
+        }
     }
 }
