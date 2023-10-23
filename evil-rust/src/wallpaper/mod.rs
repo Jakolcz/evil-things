@@ -11,6 +11,8 @@ use crate::module::Module;
 pub const MODULE_NAME: &str = "wallpaper";
 const DEFAULT_SOURCE_HTTP: &str = "https://source.unsplash.com/random/1920x1080";
 const GITHUB_ROOT: &str = "https://raw.githubusercontent.com/Jakolcz/evil-things/main/evil-rust/src/wallpaper/data/";
+const DEFAULT_WINDOWS_FOLDER: &str = "C:\\Windows\\Web";
+const REGISTRY_KEY: &str = "Control Panel\\Desktop";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WallpaperModule {
@@ -73,6 +75,7 @@ impl Module for WallpaperModule {
     fn trigger(&self) {
         log::info!("Triggering wallpaper module");
         self.ensure_files_exist();
+        self.switch_wallpaper();
     }
 }
 
@@ -85,19 +88,28 @@ impl WallpaperModule {
         self.frequency_range.clone()
     }
 
+    // #[cfg(debug_assertions)]
+    fn switch_wallpaper(&self) {
+        // log::warn!("Not switching wallpaper in debug mode");
+        let hkcu = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
+        let desktop = hkcu.open_subkey_with_flags(REGISTRY_KEY, winreg::enums::KEY_ALL_ACCESS).unwrap();
+        // let desktop = hkcu.open_subkey(REGISTRY_KEY).unwrap();
+        let wallpaper_reg_value: String = desktop.get_value("Wallpaper").unwrap();
+        log::debug!("Current wallpaper: {}", wallpaper_reg_value);
+    }
+
     fn ensure_files_exist(&self) {
-        let files = fs::read_dir(&self.wallpaper_dir).unwrap().map(|entry| {
+        let files_exist = fs::read_dir(&self.wallpaper_dir).unwrap().map(|entry| {
             entry.unwrap()
         }).any(|dir_entry| {
             log::debug!("Checking if file {:?} ends with .jpg", dir_entry.path());
             dir_entry.path().to_str().unwrap().ends_with(".jpg")
         });
-        if files {
-            log::debug!("Files already exist in wallpaper dir, skipping download");
-            return;
+
+        if !files_exist {
+            log::debug!("Files do not exist in wallpaper dir, downloading");
+            self.download_files();
         }
-        log::debug!("Files do not exist in wallpaper dir, downloading");
-        self.download_files();
     }
 
     fn download_files(&self) {
