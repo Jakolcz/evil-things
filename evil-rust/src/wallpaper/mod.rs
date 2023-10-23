@@ -75,7 +75,7 @@ impl ModuleConfig for WallpaperModule {
 
 impl Module for WallpaperModule {
     fn trigger(&mut self) {
-        log::info!("Triggering wallpaper module");
+        log::debug!("Triggering wallpaper module");
         self.ensure_files_exist();
         self.switch_wallpaper();
     }
@@ -116,7 +116,6 @@ impl WallpaperModule {
         let files_exist = fs::read_dir(&self.wallpaper_dir).unwrap().map(|entry| {
             entry.unwrap()
         }).any(|dir_entry| {
-            log::debug!("Checking if file {:?} ends with .jpg", dir_entry.path());
             dir_entry.path().to_str().unwrap().ends_with(".jpg")
         });
 
