@@ -1,3 +1,3 @@
 pub trait Module {
-    fn trigger(&self);
+    fn trigger(&mut self);
 }

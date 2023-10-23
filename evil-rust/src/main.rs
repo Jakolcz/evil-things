@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let base_config = config::get_base_config();
     log::info!("Loaded base_config: {:?}", base_config);
-    let wallpaper_module = wallpaper::WallpaperModule::new(&base_config);
+    let mut wallpaper_module = wallpaper::WallpaperModule::new(&base_config);
     log::info!("Loaded wallpaper_module: {:?}", wallpaper_module);
 
     loop {
@@ -36,8 +36,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn get_log_level() -> LevelFilter {
-    #[cfg(debug_assertions)]
+    // #[cfg(debug_assertions)]
     return LevelFilter::Debug;
-    #[cfg(not(debug_assertions))]
-    return LevelFilter::Error;
+    // #[cfg(not(debug_assertions))]
+    // return LevelFilter::Error;
 }

@@ -20,6 +20,7 @@ pub struct WallpaperModule {
     wallpaper_dir: PathBuf,
     source_http: String,
     frequency_range: Range<u32>,
+    original_wallpaper: Option<String>,
 }
 
 impl ModuleConfig for WallpaperModule {
@@ -30,6 +31,7 @@ impl ModuleConfig for WallpaperModule {
                 enabled: true,
                 wallpaper_dir: module_home,
                 source_http: String::from(GITHUB_ROOT),
+                original_wallpaper: None,
                 #[cfg(debug_assertions)]
                 frequency_range: (MINUTE..2 * MINUTE),
                 #[cfg(not(debug_assertions))]
@@ -72,7 +74,7 @@ impl ModuleConfig for WallpaperModule {
 }
 
 impl Module for WallpaperModule {
-    fn trigger(&self) {
+    fn trigger(&mut self) {
         log::info!("Triggering wallpaper module");
         self.ensure_files_exist();
         self.switch_wallpaper();
@@ -88,14 +90,26 @@ impl WallpaperModule {
         self.frequency_range.clone()
     }
 
+    fn set_original_wallpaper(&mut self, original_wallpaper: String) {
+        self.original_wallpaper = Some(original_wallpaper);
+        self.persist();
+    }
+
+    fn get_original_wallpaper(&self) -> Option<String> {
+        self.original_wallpaper.clone()
+    }
+
     // #[cfg(debug_assertions)]
-    fn switch_wallpaper(&self) {
+    fn switch_wallpaper(&mut self) {
         // log::warn!("Not switching wallpaper in debug mode");
         let hkcu = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
         let desktop = hkcu.open_subkey_with_flags(REGISTRY_KEY, winreg::enums::KEY_ALL_ACCESS).unwrap();
         // let desktop = hkcu.open_subkey(REGISTRY_KEY).unwrap();
-        let wallpaper_reg_value: String = desktop.get_value("Wallpaper").unwrap();
-        log::debug!("Current wallpaper: {}", wallpaper_reg_value);
+        if self.get_original_wallpaper().is_none() {
+            let wallpaper_reg_value: String = desktop.get_value("Wallpaper").unwrap();
+            log::debug!("Current wallpaper: {}", wallpaper_reg_value);
+            self.set_original_wallpaper(wallpaper_reg_value.clone());
+        }
     }
 
     fn ensure_files_exist(&self) {
