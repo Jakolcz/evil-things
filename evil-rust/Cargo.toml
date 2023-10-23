@@ -13,3 +13,5 @@ log = "0.4.20"
 simple_logger = "4.2.0"
 toml = "0.8.2"
 serde = { version = "1.0.189", features = ["derive"] }
+winreg = "0.51.0"
+is_elevated = "0.1.2"

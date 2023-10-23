@@ -14,6 +14,12 @@ use crate::module::Module;
 fn main() -> Result<(), Box<dyn Error>> {
     SimpleLogger::new().with_level(get_log_level()).init().unwrap();
 
+    // Only continue if we have admin rights
+    if !is_elevated::is_elevated() {
+        log::error!("Not running as Admin");
+        return Ok(());
+    }
+
     let base_config = config::get_base_config();
     log::info!("Loaded base_config: {:?}", base_config);
     let wallpaper_module = wallpaper::WallpaperModule::new(&base_config);
