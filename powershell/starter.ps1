@@ -1,3 +1,6 @@
+# Terminate on any error
+$ErrorActionPreference = "Stop"
+
 # Define the URL of the executable
 $exeUrl = "PATH_TO_EXE"
 
