@@ -153,11 +153,6 @@ impl WallpaperModule {
         in this case and this is exactly the reason CStr and CString exist.
         https://stackoverflow.com/a/59030949
          */
-        // #[cfg(not(debug_assertions))]
-        // desktop.set_value("Wallpaper", &wallpaper_path.to_str().unwrap()).unwrap();
-        // #[cfg(not(debug_assertions))]
-        // somehow it fucks up like this
-        // C:\Users\JAKUB~1.KOL\AppData\Local\Temp\Evilyn\wallpaper\2.jpgaper.toml
         unsafe {
             SystemParametersInfoA(SPI_SETDESKWALLPAPER, 0, c_wallpaper_path.as_ptr() as *mut winapi::ctypes::c_void, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
         }
