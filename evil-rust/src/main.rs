@@ -1,6 +1,7 @@
 mod config;
 mod wallpaper;
 mod module;
+mod syssound;
 
 use std::error::Error;
 use std::thread::sleep;
@@ -24,6 +25,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Loaded base_config: {:?}", base_config);
     let mut wallpaper_module = wallpaper::WallpaperModule::new(&base_config);
     log::info!("Loaded wallpaper_module: {:?}", wallpaper_module);
+    let mut syssound_module = syssound::SysSoundModule::new(&base_config);
+    log::info!("Loaded syssound_module: {:?}", syssound_module);
+    syssound_module.change_sounds();
 
     loop {
         // TODO maybe make async? Since it may take while to run it
