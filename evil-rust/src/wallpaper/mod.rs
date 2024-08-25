@@ -174,6 +174,14 @@ impl WallpaperModule {
     fn download_files(&self) {
         // The actual download triggers Windows Defender after 4th file.
         for i in 0..10 {
+            let mut dest = self.wallpaper_dir.clone();
+            dest.push(format!("{}.jpg", i));
+
+            if dest.exists() {
+                log::debug!("File already exists: {:?}", dest);
+                continue;
+            }
+
             let url = format!("{}{}.jpg", self.source_http, i);
             log::debug!("Downloading file from url: {}", url);
             let response = reqwest::blocking::get(url.clone());
@@ -186,8 +194,6 @@ impl WallpaperModule {
                 log::error!("Error downloading file from url: {}", url);
                 break;
             }
-            let mut dest = self.wallpaper_dir.clone();
-            dest.push(format!("{}.jpg", i));
             let mut out = fs::File::create(dest.clone()).unwrap();
             let content = response.bytes().unwrap();
             std::io::copy(&mut content.as_ref(), &mut out).unwrap();

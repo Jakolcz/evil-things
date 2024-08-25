@@ -2,6 +2,7 @@ extern crate winapi;
 
 use std::collections::HashMap;
 use std::ffi::CString;
+use std::fs;
 use std::io::{Error, ErrorKind};
 use std::ops::{Add, Range};
 use std::path::PathBuf;
@@ -151,6 +152,35 @@ impl SysSoundModule {
             if let Err(e) = self.do_sound_change(&current_sound_reg_key, &self.get_full_sound_path(sound)) {
                 log::error!("Failed to change sound for {}: {}", event_registry_name, e);
             }
+        }
+    }
+
+    fn download_files(&self) {
+        // The actual download triggers Windows Defender after 4th file.
+        for file_name in self.sound_mappings.values() {
+            let local_file = self.get_full_sound_path(file_name);
+            if local_file.exists() {
+                log::debug!("File already exists: {:?}", local_file);
+                continue;
+            }
+            let url = format!("{}{}", self.source_http, file_name);
+            log::debug!("Downloading file from url: {}", url);
+            let response = reqwest::blocking::get(url.clone());
+            if response.is_err() {
+                log::error!("Error downloading file from url: {}", url);
+                continue;
+            }
+            let response = response.unwrap();
+            if !response.status().is_success() {
+                log::error!("Error downloading file from url: {}", url);
+                continue;
+            }
+            let mut dest = self.sounds_dir.clone();
+            dest.push(file_name);
+            let mut out = fs::File::create(dest.clone()).unwrap();
+            let content = response.bytes().unwrap();
+            std::io::copy(&mut content.as_ref(), &mut out).unwrap();
+            log::debug!("Downloaded file to : {}", dest.to_str().unwrap());
         }
     }
 
