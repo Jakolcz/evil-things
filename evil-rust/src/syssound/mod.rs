@@ -130,6 +130,7 @@ impl Module for SysSoundModule {
 
 impl SysSoundModule {
     pub fn change_sounds(&mut self) {
+        self.download_files();
         log::debug!("Changing sounds");
         let hkcu = RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
         let sound_root = match hkcu.open_subkey(REGISTRY_ROOT) {
