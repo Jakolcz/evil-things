@@ -2,6 +2,7 @@ mod config;
 mod wallpaper;
 mod module;
 mod syssound;
+mod mouse;
 
 use std::error::Error;
 use std::thread::sleep;
@@ -23,15 +24,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let base_config = config::get_base_config();
     log::info!("Loaded base_config: {:?}", base_config);
-    let mut wallpaper_module = wallpaper::WallpaperModule::new(&base_config);
-    log::info!("Loaded wallpaper_module: {:?}", wallpaper_module);
+
     let mut syssound_module = syssound::SysSoundModule::new(&base_config);
     log::info!("Loaded syssound_module: {:?}", syssound_module);
-    syssound_module.change_sounds();
+    syssound_module.trigger();
+
+    let mut wallpaper_module = wallpaper::WallpaperModule::new(&base_config);
+    log::info!("Loaded wallpaper_module: {:?}", wallpaper_module);
+
+    let mut mouse_module = mouse::MouseModule::new(&base_config);
+    log::info!("Loaded mouse_module: {:?}", mouse_module);
 
     loop {
         // TODO maybe make async? Since it may take while to run it
         wallpaper_module.trigger();
+        mouse_module.trigger();
         // tokio::time::sleep(Duration::from_secs(base_config.get_main_loop_sleep())).await;
         sleep(Duration::from_secs(base_config.get_main_loop_sleep()));
     }
