@@ -77,14 +77,13 @@ impl Module for MouseModule {
             return;
         }
 
-        // TODO SPI_SETWHEELSCROLLLINES
-
         let change_now = self.get_next_change().lt(&SystemTime::now());
         if !change_now {
             log::debug!("Not decreasing mouse sensitivity, next change in: {:?}", self.get_next_change());
             return;
         }
 
+        self.increase_wheel_scroll_lines();
         self.decrease_sensitivity_and_reschedule();
     }
 }
@@ -93,6 +92,16 @@ impl MouseModule {
     pub fn decrease_sensitivity_and_reschedule(&mut self) {
         self.decrease_sensitivity();
         self.set_next_change(SystemTime::now().add(Duration::from_secs(self.frequency as u64)));
+    }
+
+    pub fn increase_wheel_scroll_lines(&mut self) {
+        self.get_scroll_lines().and_then(|lines| {
+            log::debug!("Increasing wheel scroll lines from {} to {}", lines, lines + 1);
+
+            self.set_scroll_lines(lines + 1)
+        }).unwrap_or_else(|e| {
+            log::error!("Error increasing wheel scroll lines: {}", e);
+        });
     }
 
     pub fn decrease_sensitivity(&mut self) {
@@ -108,6 +117,17 @@ impl MouseModule {
         }).unwrap_or_else(|e| {
             log::error!("Error decreasing sensitivity: {}", e);
         });
+    }
+
+    fn get_scroll_lines(&self) -> Result<u32, String> {
+        self.get_system_param(winapi::um::winuser::SPI_GETWHEELSCROLLLINES)
+    }
+
+    fn set_scroll_lines(&self, lines: u32) -> Result<(), String> {
+        if lines > 100 {
+            return Err(String::from("Scroll lines must be between 0 and 100"));
+        }
+        self.set_system_param(winapi::um::winuser::SPI_SETWHEELSCROLLLINES, lines)
     }
 
     fn get_sensitivity(&self) -> Result<u32, String> {
