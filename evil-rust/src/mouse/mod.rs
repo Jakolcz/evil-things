@@ -111,26 +111,7 @@ impl MouseModule {
     }
 
     fn get_sensitivity(&self) -> Result<u32, String> {
-        let mut sensitivity: u32 = 0;
-
-        /*
-        Getting (SPI_GETMOUSESPEED): You pass a pointer to a value, so you need two casts—first to convert the reference to a raw pointer, and then to convert it to a *mut c_void pointer.
-         */
-        unsafe {
-            let result = winapi::um::winuser::SystemParametersInfoW(
-                winapi::um::winuser::SPI_GETMOUSESPEED,
-                0,
-                &mut sensitivity as *mut _ as *mut _,
-                0,
-            );
-
-            // If the function succeeds, the return value is a nonzero value.
-            if result == 0 {
-                return Err(String::from("Error getting mouse speed"));
-            }
-        }
-
-        Ok(sensitivity)
+        self.get_system_param(winapi::um::winuser::SPI_GETMOUSESPEED)
     }
 
     fn set_sensitivity(&self, sensitivity: u32) -> Result<(), String> {
@@ -138,20 +119,39 @@ impl MouseModule {
             return Err(String::from("Sensitivity must be between 0 and 20"));
         }
 
-        /*
-        Setting (SPI_SETMOUSESPEED): You pass a value, so you only need one cast.
-         */
+        self.set_system_param(winapi::um::winuser::SPI_SETMOUSESPEED, sensitivity)
+    }
+
+    fn get_system_param(&self, param: u32) -> Result<u32, String> {
+        let mut value: u32 = 0;
+
         unsafe {
-            let result = winapi::um::winuser::SystemParametersInfoW(
-                winapi::um::winuser::SPI_SETMOUSESPEED,
+            let result = winapi::um::winuser::SystemParametersInfoA(
+                param,
                 0,
-                sensitivity as *mut _,
+                &mut value as *mut _ as *mut _,
+                0,
+            );
+
+            if result == 0 {
+                return Err(String::from("Error getting system parameter"));
+            }
+        }
+
+        Ok(value)
+    }
+
+    fn set_system_param(&self, param: u32, value: u32) -> Result<(), String> {
+        unsafe {
+            let result = winapi::um::winuser::SystemParametersInfoA(
+                param,
+                0,
+                value as *mut _,
                 winapi::um::winuser::SPIF_UPDATEINIFILE | winapi::um::winuser::SPIF_SENDCHANGE,
             );
 
-            // If the function succeeds, the return value is a nonzero value.
             if result == 0 {
-                return Err(String::from("Error setting mouse speed"));
+                return Err(String::from("Error setting system parameter"));
             }
         }
 
