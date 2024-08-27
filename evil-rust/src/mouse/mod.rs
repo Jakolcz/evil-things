@@ -11,6 +11,12 @@ use crate::module::Module;
 
 pub const MODULE_NAME: &str = "mouse";
 
+const MOUSE_WHEEL_ROUTING_DISABLED: u32 = 0;
+const MOUSE_WHEEL_ROUTING_ENABLED: u32 = 2;
+
+const SPI_GETMOUSEWHEELROUTING: u32 = 0x201C;
+const SPI_SETMOUSEWHEELROUTING: u32 = 0x201D;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MouseModule {
     enabled: bool,
@@ -84,6 +90,7 @@ impl Module for MouseModule {
         }
 
         self.increase_wheel_scroll_lines();
+        self.toggle_mouse_wheel_routing();
         self.decrease_sensitivity_and_reschedule();
     }
 }
@@ -104,6 +111,22 @@ impl MouseModule {
         });
     }
 
+    pub fn toggle_mouse_wheel_routing(&mut self) {
+        self.get_mouse_wheel_routing().and_then(|routing| {
+            let new_routing = if routing == MOUSE_WHEEL_ROUTING_DISABLED {
+                MOUSE_WHEEL_ROUTING_ENABLED
+            } else {
+                MOUSE_WHEEL_ROUTING_DISABLED
+            };
+
+            log::debug!("Toggling mouse wheel routing from {} to {}", routing, new_routing);
+
+            self.set_mouse_wheel_routing(new_routing)
+        }).unwrap_or_else(|e| {
+            log::error!("Error toggling mouse wheel routing: {}", e);
+        });
+    }
+
     pub fn decrease_sensitivity(&mut self) {
         self.get_sensitivity().and_then(|sensitivity| {
             // If sensitivity is already at the minimum, return early
@@ -117,6 +140,14 @@ impl MouseModule {
         }).unwrap_or_else(|e| {
             log::error!("Error decreasing sensitivity: {}", e);
         });
+    }
+
+    fn get_mouse_wheel_routing(&self) -> Result<u32, String> {
+        self.get_system_param(SPI_GETMOUSEWHEELROUTING)
+    }
+
+    fn set_mouse_wheel_routing(&self, routing: u32) -> Result<(), String> {
+        self.set_system_param(SPI_SETMOUSEWHEELROUTING, routing)
     }
 
     fn get_scroll_lines(&self) -> Result<u32, String> {
