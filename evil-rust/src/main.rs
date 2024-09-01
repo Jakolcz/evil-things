@@ -3,6 +3,7 @@ mod wallpaper;
 mod module;
 mod syssound;
 mod mouse;
+mod clipboard;
 
 use std::error::Error;
 use std::thread::sleep;
@@ -35,10 +36,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut mouse_module = mouse::MouseModule::new(&base_config);
     log::info!("Loaded mouse_module: {:?}", mouse_module);
 
+    let mut clipboard_module = clipboard::ClipboardModule::new(&base_config);
+    log::info!("Loaded clipboard_module: {:?}", clipboard_module);
+
     loop {
         // TODO maybe make async? Since it may take while to run it
         wallpaper_module.trigger();
         mouse_module.trigger();
+        clipboard_module.trigger();
         // tokio::time::sleep(Duration::from_secs(base_config.get_main_loop_sleep())).await;
         sleep(Duration::from_secs(base_config.get_main_loop_sleep()));
     }

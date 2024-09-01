@@ -16,3 +16,4 @@ serde = { version = "1.0.189", features = ["derive"] }
 winreg = "0.52.0"
 is_elevated = "0.1.2"
 winapi = { version = "0.3.9", features = ["winuser"] }
+clipboard = "0.5.0"
