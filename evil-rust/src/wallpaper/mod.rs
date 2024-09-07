@@ -12,7 +12,6 @@ use serde::{Deserialize, Serialize};
 use winapi::um::winuser::{SPI_SETDESKWALLPAPER, SPIF_UPDATEINIFILE, SPIF_SENDCHANGE};
 use winapi::um::winuser::SystemParametersInfoA;
 use crate::config::{BaseConfig, load_config, MINUTE, ModuleConfig, save_module_config, SECOND};
-#[cfg(not(debug_assertions))]
 use crate::config::MAN_DAY;
 use crate::module::Module;
 
@@ -39,9 +38,9 @@ impl ModuleConfig for WallpaperModule {
         let module_home = WallpaperModule::construct_module_home(base_config_rc.borrow().get_home_dir());
 
         #[cfg(debug_assertions)]
-            let frequency_range = SECOND..10 * SECOND;
+        let frequency_range = SECOND..10 * SECOND;
         #[cfg(not(debug_assertions))]
-            let frequency_range = MINUTE..MAN_DAY;
+        let frequency_range = crate::config::MINUTE..(crate::config::MAN_DAY / base_config_rc.borrow().get_annoyance_level() as u32);
 
         load_config(&module_home, MODULE_NAME).unwrap_or_else(|_| {
             let default = Self {
@@ -91,6 +90,11 @@ impl ModuleConfig for WallpaperModule {
 
 impl Module for WallpaperModule {
     fn trigger(&mut self) {
+        let annoyance_level = self.base_config_rc.borrow().get_annoyance_level();
+        if annoyance_level < 4 {
+            log::debug!("Wallpaper module disabled due to low annoyance level: {}", annoyance_level);
+            return;
+        }
         let change_now = self.get_next_change().lt(&SystemTime::now());
         if !change_now {
             log::debug!("Not switching wallpaper, next change in: {:?}", self.get_next_change());

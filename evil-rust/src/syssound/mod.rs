@@ -115,12 +115,18 @@ impl Module for SysSoundModule {
             return;
         }
 
+        if self.base_config_rc.borrow().get_annoyance_level() < 5 {
+            log::debug!("SysSoundModule disabled due to low annoyance level");
+            return;
+        }
+
         if !self.changed {
             self.change_sounds();
             self.changed = true;
             self.persist();
         }
 
+        // TODO - implement sound playing
         let play_now = self.next_trigger.lt(&SystemTime::now());
         if !play_now {
             log::debug!("Not playing sounds, next sound in: {:?}", self.next_trigger);
