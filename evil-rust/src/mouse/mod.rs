@@ -19,6 +19,8 @@ const MOUSE_WHEEL_ROUTING_ENABLED: u32 = 2;
 const SPI_GETMOUSEWHEELROUTING: u32 = 0x201C;
 const SPI_SETMOUSEWHEELROUTING: u32 = 0x201D;
 
+const THRESHOLD_WHEEL_ROUTING: u8 = 1;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MouseModule {
     enabled: bool,
@@ -36,7 +38,7 @@ impl ModuleConfig for MouseModule {
         #[cfg(debug_assertions)]
         let change_frequency = 5 * SECOND;
         #[cfg(not(debug_assertions))]
-        let change_frequency = 2 * DAY;
+        let change_frequency = (2 / base_config_rc.borrow().get_annoyance_level() as u32) * DAY;
 
         load_config(&module_home, MODULE_NAME).unwrap_or_else(|_| {
             let default = Self {
@@ -44,7 +46,7 @@ impl ModuleConfig for MouseModule {
                 frequency: change_frequency,
                 next_trigger: SystemTime::now(),
                 module_home: module_home.clone(),
-                base_config_rc
+                base_config_rc,
             };
 
             save_module_config(&default).unwrap_or_else(|e| {
@@ -94,8 +96,10 @@ impl Module for MouseModule {
             return;
         }
 
+        if self.base_config_rc.borrow().get_annoyance_level() > THRESHOLD_WHEEL_ROUTING {
+            self.toggle_mouse_wheel_routing();
+        }
         self.increase_wheel_scroll_lines();
-        self.toggle_mouse_wheel_routing();
         self.decrease_sensitivity_and_reschedule();
     }
 }
