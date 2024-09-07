@@ -2,8 +2,10 @@
 //!
 //! Module for decreasing mouse sensitivity.
 
+use std::cell::RefCell;
 use std::ops::Add;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::{Duration, SystemTime};
 use serde::{Deserialize, Serialize};
 use crate::config::{load_config, save_module_config, BaseConfig, ModuleConfig, DAY, SECOND};
@@ -23,11 +25,13 @@ pub struct MouseModule {
     next_trigger: SystemTime,
     frequency: u32,
     module_home: PathBuf,
+    #[serde(skip)]
+    base_config_rc: Rc<RefCell<BaseConfig>>,
 }
 
 impl ModuleConfig for MouseModule {
-    fn new(base_config: &BaseConfig) -> Self {
-        let module_home = MouseModule::construct_module_home(base_config.get_home_dir());
+    fn new(base_config_rc: Rc<RefCell<BaseConfig>>) -> Self {
+        let module_home = MouseModule::construct_module_home(base_config_rc.borrow().get_home_dir());
 
         #[cfg(debug_assertions)]
         let change_frequency = 5 * SECOND;
@@ -40,6 +44,7 @@ impl ModuleConfig for MouseModule {
                 frequency: change_frequency,
                 next_trigger: SystemTime::now(),
                 module_home: module_home.clone(),
+                base_config_rc
             };
 
             save_module_config(&default).unwrap_or_else(|e| {

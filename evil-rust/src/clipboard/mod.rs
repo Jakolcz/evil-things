@@ -1,9 +1,11 @@
 mod tampering;
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::error::Error;
 use std::ops::Add;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::SystemTime;
 use clipboard::{ClipboardContext, ClipboardProvider};
 use tampering::{ClipboardTampering, get_tampering_functions};
@@ -22,11 +24,13 @@ pub struct ClipboardModule {
     next_tampering_trigger: SystemTime,
     #[serde(skip)]
     tampering_functions: HashMap<String, ClipboardTampering>,
+    #[serde(skip)]
+    base_config_rc: Rc<RefCell<BaseConfig>>,
 }
 
 impl ModuleConfig for ClipboardModule {
-    fn new(base_config: &BaseConfig) -> Self {
-        let module_home = ClipboardModule::construct_module_home(base_config.get_home_dir());
+    fn new(base_config_rc: Rc<RefCell<BaseConfig>>) -> Self {
+        let module_home = ClipboardModule::construct_module_home(base_config_rc.borrow().get_home_dir());
 
         load_config(&module_home, MODULE_NAME).unwrap_or_else(|_| {
             let default = Self {
@@ -36,6 +40,7 @@ impl ModuleConfig for ClipboardModule {
                 home_dir: module_home,
                 next_tampering_trigger: SystemTime::now(),
                 tampering_functions: get_tampering_functions(),
+                base_config_rc
             };
 
             save_module_config(&default).unwrap_or_else(|e| {

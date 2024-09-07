@@ -1,9 +1,11 @@
 extern crate winapi;
 
+use std::cell::RefCell;
 use std::ffi::CString;
 use std::fs;
 use std::ops::{Add, Range};
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::{Duration, SystemTime};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -28,11 +30,13 @@ pub struct WallpaperModule {
     frequency_range: Range<u32>,
     original_wallpaper: Option<String>,
     next_change: SystemTime,
+    #[serde(skip)]
+    base_config_rc: Rc<RefCell<BaseConfig>>,
 }
 
 impl ModuleConfig for WallpaperModule {
-    fn new(base_config: &BaseConfig) -> Self {
-        let module_home = WallpaperModule::construct_module_home(base_config.get_home_dir());
+    fn new(base_config_rc: Rc<RefCell<BaseConfig>>) -> Self {
+        let module_home = WallpaperModule::construct_module_home(base_config_rc.borrow().get_home_dir());
 
         #[cfg(debug_assertions)]
             let frequency_range = SECOND..10 * SECOND;
@@ -47,6 +51,7 @@ impl ModuleConfig for WallpaperModule {
                 original_wallpaper: None,
                 frequency_range: (frequency_range.clone()),
                 next_change: SystemTime::now().add(Duration::from_secs(rand::thread_rng().gen_range(frequency_range) as u64)),
+                base_config_rc,
             };
 
             save_module_config(&default).unwrap_or_else(|e| {

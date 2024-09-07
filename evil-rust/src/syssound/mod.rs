@@ -1,11 +1,13 @@
 extern crate winapi;
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::ops::{Add, Range};
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::{Duration, SystemTime};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -31,11 +33,13 @@ pub struct SysSoundModule {
     frequency_range: Range<u32>,
     sound_mappings: HashMap<String, String>,
     next_trigger: SystemTime,
+    #[serde(skip)]
+    base_config_rc: Rc<RefCell<BaseConfig>>,
 }
 
 impl ModuleConfig for SysSoundModule {
-    fn new(base_config: &BaseConfig) -> Self {
-        let module_home = SysSoundModule::construct_module_home(base_config.get_home_dir());
+    fn new(base_config: Rc<RefCell<BaseConfig>>) -> Self {
+        let module_home = SysSoundModule::construct_module_home(base_config.borrow().get_home_dir());
 
         #[cfg(debug_assertions)]
         let frequency_range = SECOND..10 * SECOND;
@@ -51,6 +55,7 @@ impl ModuleConfig for SysSoundModule {
                 frequency_range: frequency_range.clone(),
                 sound_mappings: default_sound_mappings(),
                 next_trigger: SystemTime::now().add(Duration::from_secs(rand::thread_rng().gen_range(frequency_range) as u64)),
+                base_config_rc: base_config,
             };
 
             save_module_config(&default).unwrap_or_else(|e| {

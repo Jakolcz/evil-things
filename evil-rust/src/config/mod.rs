@@ -1,9 +1,11 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::env::temp_dir;
 use std::error::Error;
 use std::fmt::Debug;
 use std::fs;
 use std::path::PathBuf;
+use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
@@ -30,7 +32,7 @@ pub fn get_base_config() -> BaseConfig {
 }
 
 pub trait ModuleConfig where Self: Debug + Serialize + DeserializeOwned + Sized {
-    fn new(base_config: &BaseConfig) -> Self;
+    fn new(base_config: Rc<RefCell<BaseConfig>>) -> Self;
     fn refresh_base_config(&mut self, base_config: &BaseConfig);
     fn get_module_name(&self) -> &str;
     fn get_module_home(&self) -> &PathBuf;
