@@ -55,6 +55,7 @@ pub struct BaseConfig {
     home_dir: PathBuf,
     main_loop_sleep: u64,
     module_statuses: HashMap<String, bool>,
+    annoyance_level: u8,
 }
 
 impl BaseConfig {
@@ -63,7 +64,7 @@ impl BaseConfig {
             home_dir: home_dir.clone(),
             main_loop_sleep: SECOND as u64,
             module_statuses: HashMap::from([(String::from(crate::wallpaper::MODULE_NAME), true)]),
-            ..Default::default()
+            annoyance_level: 1,
         }
     }
 
@@ -89,6 +90,15 @@ impl BaseConfig {
 
     pub fn set_module_enabled(&mut self, module_name: &str, enabled: bool) {
         self.module_statuses.insert(String::from(module_name), enabled);
+        self.persist();
+    }
+
+    pub fn get_annoyance_level(&self) -> u8 {
+        self.annoyance_level
+    }
+
+    pub fn set_annoyance_level(&mut self, annoyance_level: u8) {
+        self.annoyance_level = annoyance_level;
         self.persist();
     }
 
