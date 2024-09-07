@@ -42,12 +42,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Loaded clipboard_module: {:?}", clipboard_module);
 
     loop {
+        let config = base_config_rc.borrow();
+        if config.get_annoyance_level() == 0 {
+            log::info!("Exiting skipping due to annoyance level being 0");
+            // TODO make configurable
+            sleep(Duration::from_secs(10));
+            continue;
+        }
+
         // TODO maybe make async? Since it may take while to run it
         wallpaper_module.trigger();
         mouse_module.trigger();
         clipboard_module.trigger();
         // tokio::time::sleep(Duration::from_secs(base_config.get_main_loop_sleep())).await;
-        sleep(Duration::from_secs(base_config_rc.borrow().get_main_loop_sleep()));
+        sleep(Duration::from_secs(config.get_main_loop_sleep()));
     }
 
     Ok(())
