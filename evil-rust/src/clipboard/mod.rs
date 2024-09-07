@@ -138,7 +138,7 @@ impl ClipboardModule {
                 continue;
             }
             if tampering.trigger.lt(&now) {
-                tampering.tamper(&mut content);
+                (tampering.tamper)(&mut content);
                 tampering.trigger = now.add(std::time::Duration::from_secs(tampering.cooldown as u64));
             }
         }
