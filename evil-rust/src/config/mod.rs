@@ -130,10 +130,13 @@ impl BaseConfig {
     }
 
     /// Increases the annoyance level by one, sets the next increase time to the current time plus the interval and persists the changes.
-    pub fn increase_annoyance_level(&mut self) {
+    /// # Returns
+    ///    u8 - The new annoyance level.
+    pub fn increase_annoyance_level(&mut self) -> u8 {
         self.annoyance_level += 1;
         self.next_annoyance_level_increase = SystemTime::now().add(std::time::Duration::from_secs(ANNOYANCE_LEVEL_INCREASE_INTERVAL as u64));
         self.persist();
+        self.annoyance_level
     }
 
     pub fn set_annoyance_level(&mut self, annoyance_level: u8) {

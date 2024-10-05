@@ -46,13 +46,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let increase_annoyance_now = config.get_next_annoyance_level_increase().lt(&SystemTime::now());
         if increase_annoyance_now {
-            let new_annoyance_level = config.get_annoyance_level() + 1;
-            config.increase_annoyance_level();
-            log::info!("Increased annoyance level to {}", new_annoyance_level);
+            let new_annoyance_level = config.increase_annoyance_level();
+            log::debug!("Increased annoyance level to {}", new_annoyance_level);
         }
 
         if config.get_annoyance_level() == 0 {
-            log::info!("Exiting skipping due to annoyance level being 0");
+            log::debug!("Exiting skipping due to annoyance level being 0");
             // TODO make configurable
             sleep(Duration::from_secs(10));
             continue;
