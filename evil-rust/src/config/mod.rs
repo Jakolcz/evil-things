@@ -4,8 +4,10 @@ use std::env::temp_dir;
 use std::error::Error;
 use std::fmt::Debug;
 use std::fs;
+use std::ops::Add;
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
@@ -20,6 +22,8 @@ pub const MAN_DAY: u32 = 8 * HOUR;
 pub const DAY: u32 = 24 * HOUR;
 pub const WEEK: u32 = 7 * DAY;
 
+pub const ANNOYANCE_LEVEL_INCREASE_INTERVAL: u32 = 3 * WEEK;
+
 pub fn get_base_config() -> BaseConfig {
     log::debug!("Loading config...");
 
@@ -31,7 +35,10 @@ pub fn get_base_config() -> BaseConfig {
     load_base_config(&home_dir)
 }
 
-pub trait ModuleConfig where Self: Debug + Serialize + DeserializeOwned + Sized {
+pub trait ModuleConfig
+where
+    Self: Debug + Serialize + DeserializeOwned + Sized,
+{
     fn new(base_config: Rc<RefCell<BaseConfig>>) -> Self;
     fn refresh_base_config(&mut self, base_config: &BaseConfig);
     fn get_module_name(&self) -> &str;
@@ -51,13 +58,26 @@ pub trait ModuleConfig where Self: Debug + Serialize + DeserializeOwned + Sized 
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 // #[serde(deny_unknown_fields)]
 pub struct BaseConfig {
     home_dir: PathBuf,
     main_loop_sleep: u64,
     module_statuses: HashMap<String, bool>,
     annoyance_level: u8,
+    next_annoyance_level_increase: SystemTime,
+}
+
+impl Default for BaseConfig {
+    fn default() -> Self {
+        Self {
+            home_dir: PathBuf::new(),
+            main_loop_sleep: SECOND as u64,
+            module_statuses: HashMap::new(),
+            annoyance_level: 1,
+            next_annoyance_level_increase: SystemTime::now().add(std::time::Duration::from_secs(ANNOYANCE_LEVEL_INCREASE_INTERVAL as u64)),
+        }
+    }
 }
 
 impl BaseConfig {
@@ -67,6 +87,7 @@ impl BaseConfig {
             main_loop_sleep: SECOND as u64,
             module_statuses: HashMap::from([(String::from(crate::wallpaper::MODULE_NAME), true)]),
             annoyance_level: 1,
+            next_annoyance_level_increase: SystemTime::now().add(std::time::Duration::from_secs(ANNOYANCE_LEVEL_INCREASE_INTERVAL as u64)),
         }
     }
 
@@ -97,6 +118,22 @@ impl BaseConfig {
 
     pub fn get_annoyance_level(&self) -> u8 {
         self.annoyance_level
+    }
+
+    pub fn get_next_annoyance_level_increase(&self) -> SystemTime {
+        self.next_annoyance_level_increase
+    }
+
+    pub fn set_next_annoyance_level_increase(&mut self, next_annoyance_level_increase: SystemTime) {
+        self.next_annoyance_level_increase = next_annoyance_level_increase;
+        self.persist();
+    }
+
+    /// Increases the annoyance level by one, sets the next increase time to the current time plus the interval and persists the changes.
+    pub fn increase_annoyance_level(&mut self) {
+        self.annoyance_level += 1;
+        self.next_annoyance_level_increase = SystemTime::now().add(std::time::Duration::from_secs(ANNOYANCE_LEVEL_INCREASE_INTERVAL as u64));
+        self.persist();
     }
 
     pub fn set_annoyance_level(&mut self, annoyance_level: u8) {

@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 use log::LevelFilter;
 use simple_logger::SimpleLogger;
 use crate::config::ModuleConfig;
@@ -42,7 +42,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Loaded clipboard_module: {:?}", clipboard_module);
 
     loop {
-        let config = base_config_rc.borrow();
+        let mut config = base_config_rc.borrow_mut();
+
+        let increase_annoyance_now = config.get_next_annoyance_level_increase().lt(&SystemTime::now());
+        if increase_annoyance_now {
+            let new_annoyance_level = config.get_annoyance_level() + 1;
+            config.increase_annoyance_level();
+            log::info!("Increased annoyance level to {}", new_annoyance_level);
+        }
+
         if config.get_annoyance_level() == 0 {
             log::info!("Exiting skipping due to annoyance level being 0");
             // TODO make configurable
