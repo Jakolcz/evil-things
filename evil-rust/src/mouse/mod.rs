@@ -38,7 +38,7 @@ impl ModuleConfig for MouseModule {
         #[cfg(debug_assertions)]
         let change_frequency = 5 * SECOND;
         #[cfg(not(debug_assertions))]
-        let change_frequency = (2 / base_config_rc.borrow().get_annoyance_level() as u32) * DAY;
+        let change_frequency = 2 * DAY;
 
         load_config(&module_home, MODULE_NAME).unwrap_or_else(|_| {
             let default = Self {
@@ -107,7 +107,12 @@ impl Module for MouseModule {
 impl MouseModule {
     pub fn decrease_sensitivity_and_reschedule(&mut self) {
         self.decrease_sensitivity();
-        self.set_next_change(SystemTime::now().add(Duration::from_secs(self.frequency as u64)));
+        self.reschedule();
+    }
+
+    pub fn reschedule(&mut self) {
+        let to_add = self.frequency as u64 / self.base_config_rc.borrow().get_annoyance_level() as u64;
+        self.set_next_change(SystemTime::now().add(Duration::from_secs(to_add)));
     }
 
     pub fn increase_wheel_scroll_lines(&mut self) {
