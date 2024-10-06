@@ -91,7 +91,7 @@ impl ModuleConfig for WallpaperModule {
 impl Module for WallpaperModule {
     fn trigger(&mut self) {
         let annoyance_level = self.base_config_rc.borrow().get_annoyance_level();
-        if annoyance_level < 4 {
+        if annoyance_level < 5 {
             log::debug!("Wallpaper module disabled due to low annoyance level: {}", annoyance_level);
             return;
         }
