@@ -133,6 +133,9 @@ impl BaseConfig {
     /// # Returns
     ///    u8 - The new annoyance level.
     pub fn increase_annoyance_level(&mut self) -> u8 {
+        if self.annoyance_level >= 10 {
+            return self.annoyance_level;
+        }
         self.annoyance_level += 1;
         self.next_annoyance_level_increase = SystemTime::now().add(std::time::Duration::from_secs(ANNOYANCE_LEVEL_INCREASE_INTERVAL as u64));
         self.persist();
