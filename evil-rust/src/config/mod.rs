@@ -84,7 +84,7 @@ impl BaseConfig {
     pub fn new(home_dir: &PathBuf) -> Self {
         Self {
             home_dir: home_dir.clone(),
-            main_loop_sleep: SECOND as u64,
+            main_loop_sleep: 5 * SECOND as u64,
             module_statuses: HashMap::from([(String::from(crate::wallpaper::MODULE_NAME), true)]),
             annoyance_level: 1,
             next_annoyance_level_increase: SystemTime::now().add(std::time::Duration::from_secs(ANNOYANCE_LEVEL_INCREASE_INTERVAL as u64)),

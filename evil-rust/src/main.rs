@@ -18,6 +18,8 @@ use crate::module::Module;
 // #[tokio::main]
 fn main() -> Result<(), Box<dyn Error>> {
     SimpleLogger::new().with_level(get_log_level()).init().unwrap();
+    log::debug!("Sleeping for 15 secs");
+    sleep(Duration::from_secs(15));
 
     // Only continue if we have admin rights
     if !is_elevated::is_elevated() {
@@ -30,7 +32,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut syssound_module = syssound::SysSoundModule::new(Rc::clone(&base_config_rc));
     log::info!("Loaded syssound_module: {:?}", syssound_module);
-    syssound_module.trigger();
 
     let mut wallpaper_module = wallpaper::WallpaperModule::new(Rc::clone(&base_config_rc));
     log::info!("Loaded wallpaper_module: {:?}", wallpaper_module);
@@ -59,6 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // TODO maybe make async? Since it may take while to run it
         wallpaper_module.trigger();
+        syssound_module.trigger();
         mouse_module.trigger();
         clipboard_module.trigger();
         // tokio::time::sleep(Duration::from_secs(base_config.get_main_loop_sleep())).await;
