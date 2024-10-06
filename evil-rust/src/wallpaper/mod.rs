@@ -109,7 +109,7 @@ impl Module for WallpaperModule {
 
 impl WallpaperModule {
     pub fn get_next_frequency(&self) -> u32 {
-        rand::thread_rng().gen_range(self.frequency_range.clone())
+        rand::thread_rng().gen_range(self.frequency_range.clone()) / self.base_config_rc.borrow().get_annoyance_level() as u32
     }
 
     pub fn get_frequency_range(&self) -> Range<u32> {
