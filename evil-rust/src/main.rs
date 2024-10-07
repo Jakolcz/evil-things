@@ -43,11 +43,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Loaded clipboard_module: {:?}", clipboard_module);
 
     loop {
-        let mut config = base_config_rc.borrow_mut();
+        let config = base_config_rc.borrow();
 
         let increase_annoyance_now = config.get_next_annoyance_level_increase().lt(&SystemTime::now());
         if increase_annoyance_now {
-            let new_annoyance_level = config.increase_annoyance_level();
+            let new_annoyance_level = base_config_rc.borrow_mut().increase_annoyance_level();
             log::debug!("Increased annoyance level to {}", new_annoyance_level);
         }
 
