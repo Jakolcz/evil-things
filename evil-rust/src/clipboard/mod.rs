@@ -142,6 +142,7 @@ impl ClipboardModule {
             if probability < 0.7 {      // 70% chance to skip tampering
                 continue;
             }
+            log::debug!("Tampering with clipboard content using: {:?}", tampering);
             if tampering.trigger.lt(&now) {
                 (tampering.tamper)(&mut content);
                 tampering.trigger = now.add(std::time::Duration::from_secs(tampering.cooldown as u64));

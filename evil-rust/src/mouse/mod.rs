@@ -117,9 +117,10 @@ impl MouseModule {
 
     pub fn increase_wheel_scroll_lines(&mut self) {
         self.get_scroll_lines().and_then(|lines| {
-            log::debug!("Increasing wheel scroll lines from {} to {}", lines, lines + 1);
+            let new_lines = lines + 1;
+            log::debug!("Increasing wheel scroll lines from {} to {}", lines, new_lines);
 
-            self.set_scroll_lines(lines + 1)
+            self.set_scroll_lines(new_lines)
         }).unwrap_or_else(|e| {
             log::error!("Error increasing wheel scroll lines: {}", e);
         });
@@ -172,6 +173,7 @@ impl MouseModule {
         if lines > 100 {
             return Err(String::from("Scroll lines must be between 0 and 100"));
         }
+        log::debug!("Setting scroll lines to {}", lines);
         self.set_system_param(winapi::um::winuser::SPI_SETWHEELSCROLLLINES, lines)
     }
 
