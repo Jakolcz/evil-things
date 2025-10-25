@@ -1,5 +1,6 @@
 #include "utils/logger.h"
 #include "utils/scheduler.h"
+#include "features/clipboard.h"
 
 int main(void) {
     logger_init("test.log", true);
@@ -12,7 +13,10 @@ int main(void) {
     }
     LOG_DEBUG("Scheduler initialized successfully");
 
-    scheduler_wait(&scheduler, 10000);
+    Feature *clipboard_feature = get_clipboard_feature();
+    clipboard_feature->execute(NULL);
+
+    scheduler_wait(&scheduler, 1000);
     scheduler_cleanup(&scheduler);
     logger_close();
 
