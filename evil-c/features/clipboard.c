@@ -102,6 +102,32 @@ bool write_text_to_clipboard(const char *text) {
     return true;
 }
 
+char *swap_case(const char *input) {
+    if (!input) {
+        return NULL;
+    }
+
+    const size_t len = strlen(input);
+    char *output = malloc(len + 1);
+    if (!output) {
+        return NULL;
+    }
+
+    for (size_t i = 0; i < len; i++) {
+        const char c = input[i];
+        // Use bitwise XOR for case swapping
+        // The XOR operation works because in ASCII, uppercase and lowercase letters differ only in bit 5 (value 32). XOR toggles this bit directly, making it faster than arithmetic operations.
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+            output[i] = (char) (c ^ 32);
+        } else {
+            output[i] = c;
+        }
+    }
+    output[len] = '\0';
+
+    return output;
+}
+
 /// Replace all semicolons in the input string with Greek question marks (;).
 ///
 /// @return A newly allocated string with replacements, or NULL if no replacements were made or something went wrong.
@@ -153,6 +179,7 @@ char *replace_semicolon_with_greek_question_mark(const char *input) {
     return output;
 }
 
+/// Does not have proper UTF-8 handling for reading data from clipboard.
 void execute_clipboard_feature(void *ignored) {
     LOG_DEBUG("Executing clipboard feature");
     char *text = get_text_from_clipboard();
@@ -160,7 +187,8 @@ void execute_clipboard_feature(void *ignored) {
         LOG_DEBUG("No text retrieved from clipboard");
         return;
     }
-    char *modified_text = replace_semicolon_with_greek_question_mark(text);
+    // char *modified_text = replace_semicolon_with_greek_question_mark(text);
+    char *modified_text = swap_case(text);
     free(text);
     if (!modified_text) {
         LOG_DEBUG("Modified text is NULL, no modifications made or error occurred");
