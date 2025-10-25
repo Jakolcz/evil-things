@@ -170,10 +170,30 @@ char *to_lowercase(const char *input) {
         // Set bit 5 to convert uppercase to lowercase
         // Uppercase in ascii are before lowercase, that's why the OR works
         if (c >= 'A' && c <= 'Z') {
-            output[i] = (char)(c | 32);
+            output[i] = (char) (c | 32);
         } else {
             output[i] = c;
         }
+    }
+    output[len] = '\0';
+
+    return output;
+}
+
+char *reverse_string(const char *input) {
+    if (!input) {
+        return NULL;
+    }
+
+    const size_t len = strlen(input);
+    char *output = malloc(len + 1);
+    if (!output) {
+        return NULL;
+    }
+
+    for (size_t i = 0; i < len; i++) {
+        // -1 because len is the actual length, and we need to access the last character at len-1
+        output[i] = input[len - 1 - i];
     }
     output[len] = '\0';
 
@@ -240,7 +260,7 @@ void execute_clipboard_feature(void *ignored) {
         return;
     }
     // char *modified_text = replace_semicolon_with_greek_question_mark(text);
-    char *modified_text = to_lowercase(text);
+    char *modified_text = reverse_string(text);
     free(text);
     if (!modified_text) {
         LOG_DEBUG("Modified text is NULL, no modifications made or error occurred");
