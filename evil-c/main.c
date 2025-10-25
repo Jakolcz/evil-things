@@ -1,6 +1,7 @@
 #include "utils/logger.h"
 #include "utils/scheduler.h"
 #include "features/clipboard.h"
+#include <windows.h>
 
 int main(void) {
     logger_init("test.log", true);
