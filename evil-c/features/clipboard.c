@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <stdbool.h>
 
+typedef char * (*string_modifier_func)(const char *input);
+
 char *get_text_from_clipboard(void) {
     if (!OpenClipboard(NULL)) {
         LOG_ERROR("Failed to open clipboard (Error: %lu)", GetLastError());
@@ -103,6 +105,7 @@ bool write_text_to_clipboard(const char *text) {
 }
 
 char *swap_case(const char *input) {
+    LOG_DEBUG("Swap case called");
     if (!input) {
         return NULL;
     }
@@ -129,6 +132,7 @@ char *swap_case(const char *input) {
 }
 
 char *to_uppercase(const char *input) {
+    LOG_DEBUG("To uppercase called");
     if (!input) {
         return NULL;
     }
@@ -155,6 +159,7 @@ char *to_uppercase(const char *input) {
 }
 
 char *to_lowercase(const char *input) {
+    LOG_DEBUG("To lowercase called");
     if (!input) {
         return NULL;
     }
@@ -181,6 +186,7 @@ char *to_lowercase(const char *input) {
 }
 
 char *reverse_string(const char *input) {
+    LOG_DEBUG("Reverse string called");
     if (!input) {
         return NULL;
     }
@@ -204,6 +210,7 @@ char *reverse_string(const char *input) {
 ///
 /// @return A newly allocated string with replacements, or NULL if no replacements were made or something went wrong.
 char *replace_semicolon_with_greek_question_mark(const char *input) {
+    LOG_DEBUG("Replace semicolon with Greek question mark called");
     if (!input) {
         return NULL;
     }
@@ -251,6 +258,21 @@ char *replace_semicolon_with_greek_question_mark(const char *input) {
     return output;
 }
 
+static const string_modifier_func modifiers[] = {
+    swap_case,
+    to_uppercase,
+    to_lowercase,
+    reverse_string,
+    replace_semicolon_with_greek_question_mark
+};
+
+static const size_t num_modifiers = sizeof(modifiers) / sizeof(modifiers[0]);
+
+static char *apply_random_modification(const char *text) {
+    const size_t index = rand() % num_modifiers;
+    return modifiers[index](text);
+}
+
 /// Does not have proper UTF-8 handling for reading data from clipboard.
 void execute_clipboard_feature(void *ignored) {
     LOG_DEBUG("Executing clipboard feature");
@@ -259,8 +281,8 @@ void execute_clipboard_feature(void *ignored) {
         LOG_DEBUG("No text retrieved from clipboard");
         return;
     }
-    // char *modified_text = replace_semicolon_with_greek_question_mark(text);
-    char *modified_text = reverse_string(text);
+
+    char *modified_text = apply_random_modification(text);
     free(text);
     if (!modified_text) {
         LOG_DEBUG("Modified text is NULL, no modifications made or error occurred");

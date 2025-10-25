@@ -4,6 +4,9 @@
 
 int main(void) {
     logger_init("test.log", true);
+
+    // Seed random number generator
+    srand((unsigned int) GetTickCount64());
     LOG_INFO("Starting the application");
     Scheduler scheduler;
     if (!scheduler_init(&scheduler)) {
