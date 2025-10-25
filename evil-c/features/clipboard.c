@@ -31,6 +31,11 @@ char *get_text_from_clipboard(void) {
     char *text = malloc(len + 1);
     if (text != NULL) {
         strcpy(text, pszText);
+    } else {
+        // Unlock and close before returning NULL to avoid resource leak
+        GlobalUnlock(hData);
+        CloseClipboard();
+        return NULL;
     }
 
     // Unlock and close
@@ -206,7 +211,7 @@ char *reverse_string(const char *input) {
     return output;
 }
 
-/// Replace all semicolons in the input string with Greek question marks (;).
+/// Replace all semicolons in the input string with Greek question marks (; ).
 ///
 /// @return A newly allocated string with replacements, or NULL if no replacements were made or something went wrong.
 char *replace_semicolon_with_greek_question_mark(const char *input) {
@@ -231,7 +236,7 @@ char *replace_semicolon_with_greek_question_mark(const char *input) {
     if (semicolon_count == 0) {
         return NULL;
     }
-    // Allocate exact size: original length + extra byte per semicolon (since ; is 2 bytes in UTF-8) + null terminator
+    // Allocate exact size: original length + extra byte per semicolon (since ; is 2 bytes in UTF-8) + null terminator
     char *output = malloc(len + semicolon_count + 1);
     if (!output) {
         return NULL;
@@ -245,9 +250,9 @@ char *replace_semicolon_with_greek_question_mark(const char *input) {
     p = input;
     while (*p) {
         if (*p == ';') {
-            // Replace with Greek question mark (;)
-            *out++ = (char) 0xCD; // First byte of ; in UTF-8
-            *out++ = (char) 0xBE; // Second byte of ; in UTF-8
+            // Replace with Greek question mark (; )
+            *out++ = (char) 0xCD; // First byte of ; in UTF-8
+            *out++ = (char) 0xBE; // Second byte of ; in UTF-8
         } else {
             *out++ = *p;
         }
@@ -269,11 +274,12 @@ static const string_modifier_func modifiers[] = {
 static const size_t num_modifiers = sizeof(modifiers) / sizeof(modifiers[0]);
 
 static char *apply_random_modification(const char *text) {
+    // We don't really care about cryptographic randomness here, just some variability
     const size_t index = rand() % num_modifiers;
     return modifiers[index](text);
 }
 
-/// Does not have proper UTF-8 handling for reading data from clipboard.
+/// Does not have proper ANSI/Unicode handling for reading data from clipboard (uses CF_TEXT, which retrieves ANSI text; non-ASCII characters may not be handled correctly).
 void execute_clipboard_feature(void *ignored) {
     LOG_DEBUG("Executing clipboard feature");
     char *text = get_text_from_clipboard();
