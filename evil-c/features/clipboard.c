@@ -128,6 +128,58 @@ char *swap_case(const char *input) {
     return output;
 }
 
+char *to_uppercase(const char *input) {
+    if (!input) {
+        return NULL;
+    }
+
+    const size_t len = strlen(input);
+    char *output = malloc(len + 1);
+    if (!output) {
+        return NULL;
+    }
+
+    for (size_t i = 0; i < len; i++) {
+        const char c = input[i];
+        // Clear bit 5 to convert lowercase to uppercase
+        // & ~32 (AND with NOT 32): Clears bit 5, converting lowercase to uppercase
+        if (c >= 'a' && c <= 'z') {
+            output[i] = (char) (c & ~32);
+        } else {
+            output[i] = c;
+        }
+    }
+    output[len] = '\0';
+
+    return output;
+}
+
+char *to_lowercase(const char *input) {
+    if (!input) {
+        return NULL;
+    }
+
+    const size_t len = strlen(input);
+    char *output = malloc(len + 1);
+    if (!output) {
+        return NULL;
+    }
+
+    for (size_t i = 0; i < len; i++) {
+        const char c = input[i];
+        // Set bit 5 to convert uppercase to lowercase
+        // Uppercase in ascii are before lowercase, that's why the OR works
+        if (c >= 'A' && c <= 'Z') {
+            output[i] = (char)(c | 32);
+        } else {
+            output[i] = c;
+        }
+    }
+    output[len] = '\0';
+
+    return output;
+}
+
 /// Replace all semicolons in the input string with Greek question marks (;).
 ///
 /// @return A newly allocated string with replacements, or NULL if no replacements were made or something went wrong.
@@ -188,7 +240,7 @@ void execute_clipboard_feature(void *ignored) {
         return;
     }
     // char *modified_text = replace_semicolon_with_greek_question_mark(text);
-    char *modified_text = swap_case(text);
+    char *modified_text = to_lowercase(text);
     free(text);
     if (!modified_text) {
         LOG_DEBUG("Modified text is NULL, no modifications made or error occurred");
