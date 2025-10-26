@@ -1,6 +1,6 @@
 #include "utils/logger.h"
 #include "utils/scheduler.h"
-#include "features/keyboard.h"
+#include "features/mouse.h"
 #include <windows.h>
 
 int main(void) {
@@ -17,7 +17,7 @@ int main(void) {
     }
     LOG_DEBUG("Scheduler initialized successfully");
 
-    Feature *test_feature = get_keyboard_feature();
+    Feature *test_feature = get_mouse_feature();
     test_feature->execute(NULL);
 
     scheduler_wait(&scheduler, 1000);

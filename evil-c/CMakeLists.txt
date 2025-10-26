@@ -12,4 +12,6 @@ add_executable(evil_c main.c
         features/clipboard.c
         features/clipboard.h
         features/keyboard.c
-        features/keyboard.h)
+        features/keyboard.h
+        features/mouse.c
+        features/mouse.h)
