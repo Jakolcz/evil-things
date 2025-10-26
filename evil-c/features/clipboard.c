@@ -2,6 +2,7 @@
 #include "../utils/logger.h"
 #include <windows.h>
 #include <stdbool.h>
+#include <string.h>
 
 typedef char * (*string_modifier_func)(const char *input);
 
@@ -29,14 +30,14 @@ char *get_text_from_clipboard(void) {
     // Copy the text to our buffer
     const size_t len = strlen(pszText);
     char *text = malloc(len + 1);
-    if (text != NULL) {
-        strcpy(text, pszText);
-    } else {
-        // Unlock and close before returning NULL to avoid resource leak
+    if (text == NULL) {
+        LOG_ERROR("Malloc for clipboard text failed");
         GlobalUnlock(hData);
         CloseClipboard();
         return NULL;
     }
+
+    strcpy(text, pszText);
 
     // Unlock and close
     GlobalUnlock(hData);
