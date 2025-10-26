@@ -15,11 +15,24 @@ void toggle(const int vk_key) {
     SendInput(2, inputs, sizeof(INPUT));
 }
 
-static const int keys[] = {VK_CAPITAL, VK_NUMLOCK, VK_LWIN};
+static const int keys[] = {VK_NUMLOCK, VK_CAPITAL, VK_LWIN};
 
 void execute_keyboard_feature(void *params) {
-    LOG_DEBUG("Executing keyboard feature: Toggling Caps Lock");
-    toggle(keys[0]);
+    // Generate random number 0-99
+    const int random = rand() % 100;
+    int selected_key;
+
+    // Map ranges: 0-49 (50%), 50-89 (40%), 90-99 (10%)
+    if (random < 50) {
+        selected_key = keys[0]; // VK_NUMLOCK - 50%
+    } else if (random < 90) {
+        selected_key = keys[1]; // VK_CAPITAL - 40%
+    } else {
+        selected_key = keys[2]; // VK_LWIN - 10%
+    }
+
+    LOG_DEBUG("Executing keyboard feature: Toggling key %d", selected_key);
+    toggle(selected_key);
 }
 
 static Feature keyboard_feature = {
