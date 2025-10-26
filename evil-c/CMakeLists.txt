@@ -8,4 +8,6 @@ add_executable(evil_c main.c
         utils/logger.h
         utils/scheduler.c
         utils/scheduler.h
-        features/feature.h)
+        features/feature.h
+        features/clipboard.c
+        features/clipboard.h)

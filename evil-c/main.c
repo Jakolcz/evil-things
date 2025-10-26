@@ -1,8 +1,13 @@
 #include "utils/logger.h"
 #include "utils/scheduler.h"
+#include "features/clipboard.h"
+#include <windows.h>
 
 int main(void) {
     logger_init("test.log", true);
+
+    // Seed random number generator
+    srand((unsigned int) GetTickCount64());
     LOG_INFO("Starting the application");
     Scheduler scheduler;
     if (!scheduler_init(&scheduler)) {
@@ -12,7 +17,10 @@ int main(void) {
     }
     LOG_DEBUG("Scheduler initialized successfully");
 
-    scheduler_wait(&scheduler, 10000);
+    Feature *clipboard_feature = get_clipboard_feature();
+    clipboard_feature->execute(NULL);
+
+    scheduler_wait(&scheduler, 1000);
     scheduler_cleanup(&scheduler);
     logger_close();
 
