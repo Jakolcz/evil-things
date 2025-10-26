@@ -2,7 +2,7 @@
 #include "../utils/logger.h"
 #include <windows.h>
 
-int get_current_trail_length() {
+static int get_current_trail_length() {
     int trailLength = 0;
     SystemParametersInfo(SPI_GETMOUSETRAILS, 0, &trailLength, 0);
     return trailLength;
@@ -10,8 +10,12 @@ int get_current_trail_length() {
 
 /// Set mouse trail length
 /// @param length Length of the mouse trail, must be 0-16 (0 or 1 to disable)
-void set_mouse_trail(const int length) {
+static void set_mouse_trail(const int length) {
     SystemParametersInfo(SPI_SETMOUSETRAILS, length, 0, SPIF_SENDCHANGE);
+}
+
+static void disable_mouse_trail(void) {
+    set_mouse_trail(0);
 }
 
 void execute_mouse_feature(void *params) {
