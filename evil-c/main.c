@@ -1,6 +1,6 @@
 #include "utils/logger.h"
 #include "utils/scheduler.h"
-#include "features/clipboard.h"
+#include "features/keyboard.h"
 #include <windows.h>
 
 int main(void) {
@@ -17,8 +17,8 @@ int main(void) {
     }
     LOG_DEBUG("Scheduler initialized successfully");
 
-    Feature *clipboard_feature = get_clipboard_feature();
-    clipboard_feature->execute(NULL);
+    Feature *test_feature = get_keyboard_feature();
+    test_feature->execute(NULL);
 
     scheduler_wait(&scheduler, 1000);
     scheduler_cleanup(&scheduler);
