@@ -2,7 +2,7 @@
 #include "../utils/logger.h"
 #include <windows.h>
 
-void toggle(const int vk_key) {
+static void toggle(const int vk_key) {
     // Send keydown and keyup events to toggle the key state
     INPUT inputs[2] = {0};
     inputs[0].type = INPUT_KEYBOARD;
