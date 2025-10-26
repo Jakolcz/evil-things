@@ -22,6 +22,9 @@ void execute_mouse_feature(void *params) {
     LOG_DEBUG("Executing mouse feature, current trail length: %d", get_current_trail_length());
     const int trail_length = rand() % 15 + 2; // Random length between 2 and 16
     set_mouse_trail(trail_length);
+    // since this will be called from a scheduler, we can safely use Sleep here
+    Sleep(750);
+    disable_mouse_trail();
 }
 
 static Feature mouse_feature = {
