@@ -1,6 +1,7 @@
 #include "mouse.h"
 #include "../utils/logger.h"
 #include <windows.h>
+#include <stdlib.h>
 
 static unsigned int call_count = 0;
 
@@ -71,9 +72,11 @@ void execute_mouse_feature(void *params) {
 
     if (call_count % 5 == 0) {
         mouse_sensitivity_feature();
-    } else if (call_count % 3 == 0) {
+    }
+    if (call_count % 3 == 0) {
         swap_mouse_buttons();
-    } else if (call_count % 2 == 0) {
+    }
+    if (call_count % 2 == 0) {
         mouse_trail_feature();
     }
 }
