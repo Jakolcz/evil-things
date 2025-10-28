@@ -50,7 +50,7 @@ static void mouse_sensitivity_feature(void) {
     set_mouse_sensitivity(sensitivity);
 }
 
-void mouse_trail_feature(void) {
+static void mouse_trail_feature(void) {
     const int trail_length = rand() % 15 + 2; // Random length between 2 and 16
     set_mouse_trail(trail_length);
     // since this will be called from a scheduler, we can safely use Sleep here
@@ -58,14 +58,24 @@ void mouse_trail_feature(void) {
     disable_mouse_trail();
 }
 
+static void swap_mouse_buttons(void) {
+    SwapMouseButton(TRUE);
+    Sleep(2000);
+    SwapMouseButton(FALSE);
+}
+
 void execute_mouse_feature(void *params) {
     LOG_DEBUG("Executing mouse feature, current sensitivity: %d", get_mouse_sensitivity());
 
     call_count++;
 
-    // TODO maybe run just once every X calls?
-    mouse_trail_feature();
-    mouse_sensitivity_feature();
+    if (call_count % 5 == 0) {
+        mouse_sensitivity_feature();
+    } else if (call_count % 3 == 0) {
+        swap_mouse_buttons();
+    } else if (call_count % 2 == 0) {
+        mouse_trail_feature();
+    }
 }
 
 static Feature mouse_feature = {
