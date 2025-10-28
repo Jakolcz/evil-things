@@ -15,6 +15,10 @@ static VOID CALLBACK threadpool_timer_callback(PTP_CALLBACK_INSTANCE instance,
     }
 
     task->callback(task->user_data);
+
+    if (task->type == TASK_AT_TIME) {
+        task->is_active = false;
+    }
 }
 
 // Initialize scheduler
@@ -31,8 +35,31 @@ bool scheduler_init(Scheduler *scheduler) {
     return true;
 }
 
+static int remove_inactive_tasks(Scheduler *scheduler) {
+    int write_index = 0;
+    for (int read_index = 0; read_index < scheduler->task_count; read_index++) {
+        if (scheduler->tasks[read_index].is_active) {
+            if (write_index != read_index) {
+                scheduler->tasks[write_index] = scheduler->tasks[read_index];
+            }
+            write_index++;
+        } else {
+            // Cleanup inactive task
+            SchedulerTask *task = &scheduler->tasks[read_index];
+            if (task->threadpool_timer) {
+                SetThreadpoolTimer(task->threadpool_timer, NULL, 0, 0);
+                WaitForThreadpoolTimerCallbacks(task->threadpool_timer, TRUE);
+                CloseThreadpoolTimer(task->threadpool_timer);
+            }
+        }
+    }
+    scheduler->task_count = write_index;
+    return write_index;
+}
+
 // Helper: Expand task array if needed
 static bool ensure_capacity(Scheduler *scheduler) {
+    remove_inactive_tasks(scheduler);
     if (scheduler->task_count >= scheduler->capacity) {
         int new_capacity = scheduler->capacity * 2;
         SchedulerTask *new_tasks = realloc(scheduler->tasks,
