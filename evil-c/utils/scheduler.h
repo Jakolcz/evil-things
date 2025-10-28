@@ -7,6 +7,9 @@
 // Callback function type
 typedef void (*SchedulerCallback)(void *user_data);
 
+// Forward declaration
+typedef struct Scheduler Scheduler;
+
 // Task types
 typedef enum {
     TASK_INTERVAL, // Repeating task at intervals
@@ -16,6 +19,7 @@ typedef enum {
 // Task structure
 typedef struct {
     TaskType type;
+    Scheduler *parent_scheduler;
     SchedulerCallback callback;
     SchedulerCallback initializer;
     SchedulerCallback cleanup;
@@ -32,7 +36,7 @@ typedef struct {
 } SchedulerTask;
 
 // Scheduler structure
-typedef struct {
+typedef struct Scheduler {
     SchedulerTask *tasks;
     int task_count;
     int capacity;

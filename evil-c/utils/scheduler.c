@@ -9,10 +9,12 @@
 static VOID CALLBACK threadpool_timer_callback(PTP_CALLBACK_INSTANCE instance,
                                                PVOID context,
                                                PTP_TIMER timer) {
-    const SchedulerTask *task = (SchedulerTask *) context;
-    if (task && task->is_active && task->callback) {
-        task->callback(task->user_data);
+    SchedulerTask *task = context;
+    if (!task || !task->is_active || !task->callback) {
+        return;
     }
+
+    task->callback(task->user_data);
 }
 
 // Initialize scheduler
@@ -70,6 +72,7 @@ int scheduler_add_interval_task(Scheduler *scheduler,
     SchedulerTask *task = &scheduler->tasks[task_id];
 
     task->type = TASK_INTERVAL;
+    task->parent_scheduler = scheduler;
     task->callback = callback;
     task->user_data = user_data;
     task->interval_ms = interval_ms;
@@ -115,6 +118,7 @@ int scheduler_add_time_task(Scheduler *scheduler,
     SchedulerTask *task = &scheduler->tasks[task_id];
 
     task->type = TASK_AT_TIME;
+    task->parent_scheduler = scheduler;
     task->callback = callback;
     task->user_data = user_data;
     task->target_time = *target_time;
