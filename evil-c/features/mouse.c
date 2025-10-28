@@ -55,12 +55,14 @@ static void mouse_trail_feature(void) {
     const int trail_length = rand() % 15 + 2; // Random length between 2 and 16
     set_mouse_trail(trail_length);
     // since this will be called from a scheduler, we can safely use Sleep here
+    // TODO refactor to use scheduler
     Sleep(750);
     disable_mouse_trail();
 }
 
 static void swap_mouse_buttons(void) {
     SwapMouseButton(TRUE);
+    // TODO refactor to use scheduler
     Sleep(2000);
     SwapMouseButton(FALSE);
 }
